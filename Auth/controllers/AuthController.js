@@ -66,7 +66,12 @@ const signup = async (req, res) => {
             maxAge: 28 * 24 * 60 * 60 * 1000
         });
 
-        return res.status(201).json({ message: 'User successfully created' });
+        return res.status(201).json({
+            message: 'User successfully created',
+            shortJwtToken: shortJwtToken,
+            longJwtToken: longJwtToken,
+            type: type
+        });
     }catch(err) {
         console.error(err);
         return res.status(500).json({ message: 'Something went wrong during signup' });
@@ -128,7 +133,12 @@ const login = async (req, res) => {
             maxAge: 28 * 24 * 60 * 60 * 1000
         });
 
-        return res.status(200).json({ message: 'User login successfully' });
+        return res.status(200).json({
+            message: 'User login successfully',
+            shortJwtToken: shortJwtToken,
+            longJwtToken: longJwtToken,
+            type: isUserExist.UserType.type
+        });
     }catch(err) {
         console.error(err);
         return res.status(500).json({ message: 'Something went wrong during login' });
@@ -137,7 +147,7 @@ const login = async (req, res) => {
 
 const resetPassword = async (req, res) => {
     try {
-        const { id, password } = req.body;
+        const { id, password, oldPassword } = req.body;
 
         const isUserExist = await User.findByPk(id,{
             attributes: ['password', 'email', 'id']
@@ -145,6 +155,12 @@ const resetPassword = async (req, res) => {
 
         if(!isUserExist){
             return res.status(401).json({ message: 'User does not exist' });
+        }
+
+        const isMatch = await bcryptjs.compare(oldPassword, isUserExist.password);
+
+        if(!isMatch){
+            return res.status(401).json({ message: 'Old password does not match' });
         }
 
         const hashedPassword = await bcryptjs.hash(password, 12);
@@ -184,7 +200,8 @@ const fetchAllUsers = async (req, res) => {
 
 const reValidateToken = async (req, res) => {
     try {
-        const refreshToken = req.cookies.refresh_token;
+        //const refreshToken = req.cookies.refresh_token;
+        const refreshToken = req.headers['x-refresh-auth-token'];
 
         if (!refreshToken) {
             return res.status(401).json({ message: 'Refresh token is required' });
@@ -233,7 +250,11 @@ const reValidateToken = async (req, res) => {
             maxAge: 28 * 24 * 60 * 60 * 1000
         });
 
-        return res.status(200).json({ message: 'New token generated' });
+        return res.status(200).json({
+            message: 'New token generated',
+            shortJwtToken: shortJwtToken,
+            longJwtToken: refreshToken,
+        });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Something went wrong during new token generation' });

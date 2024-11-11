@@ -6,7 +6,8 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const auth = async (req, res, next) => {
-    const token = req.cookies.access_token;
+    //const token = req.cookies.access_token;
+    const token = req.headers['x-auth-token'];
 
     if (!token) {
         return res.status(401).json({ msg: 'Authorization denied: No token provided' });

@@ -250,6 +250,7 @@ const updateTask = async (req, res) => {
 const fetchAllTasks = async (req, res) => {
     try {
         const { status, priority, sortBy, page = 1, pageSize = 10, search } = req.query;
+        const { id: userId, type } = req.body;
 
         const statusWhereConditions = {
             status: {
@@ -259,6 +260,12 @@ const fetchAllTasks = async (req, res) => {
 
         if (status) {
             statusWhereConditions.status = status;
+        }
+
+        const userWhereConditions = {};
+
+        if(type === 'User'){
+            userWhereConditions.id = userId;
         }
 
         const priorityWhereConditions = priority ? {
@@ -281,12 +288,12 @@ const fetchAllTasks = async (req, res) => {
                 [Op.or]: [
                     {
                         title: {
-                            [Op.iLike]: `%${search}%`
+                            [Op.like]: `%${search}%`
                         }
                     },
                     {
                         description: {
-                            [Op.iLike]: `%${search}%`
+                            [Op.like]: `%${search}%`
                         }
                     }
                 ]
@@ -294,7 +301,7 @@ const fetchAllTasks = async (req, res) => {
         }
 
         const allTasks = await Task.findAll({
-            attributes: ['title', 'description', 'dueDate'],
+            attributes: ['title', 'description', 'dueDate', 'id'],
             include: [
                 {
                     model: Status,
@@ -308,7 +315,8 @@ const fetchAllTasks = async (req, res) => {
                 },
                 {
                     model: User,
-                    attributes: ['userName', 'id']
+                    attributes: ['userName', 'id'],
+                    where: userWhereConditions
                 },
                 {
                     model: AuditLog,
